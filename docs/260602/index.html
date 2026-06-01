@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>인공지능 이후의 소프트웨어: 하네스 전략 한국어 분석 보고서</title>
+  <meta name="description" content="토마스 퉁구즈의 글을 바탕으로, 대규모 언어 모델을 기업 업무 에이전트로 전환하는 하네스 계층을 한국어로 구조화한 분석 보고서입니다." />
+  <meta property="og:title" content="인공지능 이후의 소프트웨어: 하네스 전략 한국어 분석 보고서" />
+  <meta property="og:description" content="컨텍스트, 도구, 실행 루프, 상태, 격리 실행환경, 관측성, 비용 최적화로 보는 기업형 에이전트 운영 모델입니다." />
+  <style>
+    :root {
+      --bg:#f5f1e8; --ink:#151515; --muted:#60636b; --paper:#fffdf8; --panel:#f9f6ef;
+      --line:#ded6c8; --accent:#d84b2a; --accent2:#0f766e; --accent3:#7c3aed;
+      --shadow:0 22px 60px rgba(45,35,20,.13); --radius:28px;
+    }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { margin:0; color:var(--ink); background:linear-gradient(180deg,#efe7d8 0%,var(--bg) 34%,#fbfaf7 100%); font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR',system-ui,sans-serif; line-height:1.76; word-break:keep-all; overflow-wrap:break-word; }
+    a { color:inherit; text-decoration-thickness:.08em; text-underline-offset:.22em; }
+    .wrap { width:min(1120px, calc(100% - 36px)); margin:0 auto; }
+    .topbar { position:sticky; top:0; z-index:20; backdrop-filter:blur(18px); background:rgba(245,241,232,.82); border-bottom:1px solid rgba(222,214,200,.7); }
+    .topbar .wrap { display:flex; align-items:center; justify-content:space-between; gap:20px; padding:12px 0; }
+    .brand { font-weight:900; letter-spacing:-.04em; }
+    nav { display:flex; gap:14px; flex-wrap:wrap; font-size:14px; color:#3d4148; }
+    nav a { text-decoration:none; padding:7px 10px; border-radius:999px; }
+    nav a:hover { background:#fff7ea; }
+    header.hero { padding:72px 0 42px; border-bottom:1px solid var(--line); }
+    .kicker { display:inline-flex; align-items:center; gap:8px; color:var(--accent); font-size:14px; font-weight:900; letter-spacing:.02em; margin-bottom:18px; }
+    .kicker::before { content:""; width:10px; height:10px; border-radius:50%; background:var(--accent); box-shadow:18px 0 0 var(--accent2),36px 0 0 var(--accent3); margin-right:36px; }
+    h1 { font-size:clamp(40px,7vw,84px); line-height:1.02; letter-spacing:-.07em; max-width:980px; margin:0 0 24px; }
+    .subtitle { font-size:clamp(18px,2.3vw,25px); color:#333943; max-width:880px; margin:0 0 28px; }
+    .meta { display:flex; gap:10px; flex-wrap:wrap; }
+    .pill { border:1px solid var(--line); background:rgba(255,253,248,.78); border-radius:999px; padding:9px 13px; font-size:14px; color:#4f525a; }
+    main { padding:38px 0 72px; }
+    section { margin:42px 0; }
+    .grid { display:grid; gap:20px; }
+    .cols-2 { grid-template-columns:1.08fr .92fr; }
+    .cols-3 { grid-template-columns:repeat(3,minmax(0,1fr)); }
+    .card { background:rgba(255,253,248,.88); border:1px solid var(--line); border-radius:var(--radius); padding:26px; box-shadow:var(--shadow); min-width:0; }
+    .flat { box-shadow:none; background:var(--panel); }
+    h2 { font-size:clamp(28px,4vw,46px); line-height:1.14; letter-spacing:-.055em; margin:0 0 16px; }
+    h3 { font-size:23px; line-height:1.25; letter-spacing:-.035em; margin:0 0 12px; }
+    p { margin:0 0 14px; color:#363b44; }
+    ul, ol { margin:10px 0 0; padding-left:1.25em; color:#363b44; }
+    li { margin:7px 0; }
+    .lede { font-size:27px; line-height:1.42; font-weight:900; letter-spacing:-.045em; padding:30px; border-radius:32px; background:#171717; color:#fff7ea; box-shadow:var(--shadow); }
+    .lede strong { color:#ffd166; }
+    .section-note { color:var(--muted); max-width:760px; }
+    .numbered { counter-reset:item; }
+    .numbered .card { position:relative; padding-top:66px; }
+    .numbered .card::before { counter-increment:item; content:counter(item); position:absolute; top:22px; left:24px; width:34px; height:34px; border-radius:50%; display:grid; place-items:center; background:#151515; color:#fff7ea; font-weight:900; }
+    .diagram { background:#111827; color:#fff; border-radius:34px; padding:22px; box-shadow:var(--shadow); overflow:hidden; }
+    .diagram svg { width:100%; height:auto; display:block; }
+    .comparison { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+    .before { border-top:7px solid #b45309; }
+    .after { border-top:7px solid #0f766e; }
+    .quote { font-size:24px; font-weight:900; letter-spacing:-.04em; color:#161616; }
+    .insight { border-left:7px solid var(--accent); }
+    .check { display:grid; grid-template-columns:34px 1fr; gap:14px; align-items:start; padding:16px 0; border-top:1px solid var(--line); }
+    .check:first-child { border-top:0; }
+    .mark { width:34px; height:34px; border-radius:50%; background:#0f766e; color:#fff; display:grid; place-items:center; font-weight:900; }
+    .source { font-size:14px; color:#6b6e75; }
+    footer { border-top:1px solid var(--line); padding:34px 0 64px; color:#666a72; background:#fffaf1; }
+    @media (max-width: 900px) {
+      .cols-2, .cols-3, .comparison { grid-template-columns:1fr; }
+      .topbar { position:static; }
+      .topbar .wrap { align-items:flex-start; flex-direction:column; }
+      header.hero { padding-top:46px; }
+      .wrap { width:min(100% - 24px, 1120px); }
+      .card { padding:22px; border-radius:22px; }
+      .lede { padding:24px; }
+      nav { gap:6px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="wrap">
+      <div class="brand" aria-label="보고서 이름">하네스 전략 분석</div>
+      <nav aria-label="문서 내 이동">
+        <a href="#summary">핵심 요약</a>
+        <a href="#diagram">구조도</a>
+        <a href="#layers">일곱 계층</a>
+        <a href="#insights">기업 시사점</a>
+        <a href="#actions">실행 과제</a>
+      </nav>
+    </div>
+  </div>
+
+  <header class="hero" id="top">
+    <div class="wrap">
+      <div class="kicker">전문가 블로그형 한국어 분석 보고서</div>
+      <h1>인공지능 이후의 소프트웨어는 하네스를 중심으로 재편됩니다</h1>
+      <p class="subtitle">토마스 퉁구즈의 글을 바탕으로, 대규모 언어 모델을 기업 업무 시스템 안에서 안전하게 실행시키는 하네스 계층을 정리했습니다. 핵심은 더 강한 모델을 고르는 일이 아니라, 모델을 업무·도구·권한·평가 체계 안에 묶어 운영하는 능력입니다.</p>
+      <div class="meta" aria-label="문서 정보">
+        <span class="pill">원문 작성자: 토마스 퉁구즈</span>
+        <span class="pill">원문 게시일: 2026년 5월 27일</span>
+        <span class="pill">재작성일: 2026년 6월 2일 한국시간</span>
+        <span class="pill">주제: 기업형 에이전트 운영 모델</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section id="summary" aria-labelledby="summary-title">
+      <div class="lede" id="summary-title">요약하면, <strong>모두가 비슷한 인공지능 모델을 쓰는 시대</strong>에는 모델 자체보다 모델을 업무에 태우는 하네스가 차별화의 중심이 됩니다.</div>
+    </section>
+
+    <section class="grid cols-2" aria-labelledby="problem-title">
+      <article class="card">
+        <h2 id="problem-title">왜 하네스가 중요한가</h2>
+        <p>원시 모델은 지식과 추론 능력을 제공하지만, 기업 업무는 그 자체로 끝나지 않습니다. 실제 업무에는 고객 맥락, 내부 문서, 승인 절차, 도구 호출, 권한 경계, 실패 복구, 감사 기록, 비용 통제가 함께 필요합니다.</p>
+        <p>따라서 기업 소프트웨어의 경쟁력은 화면과 기능 목록에서, 모델을 둘러싼 실행 구조로 이동합니다. 이 실행 구조가 바로 하네스입니다.</p>
+      </article>
+      <aside class="card flat" aria-label="한 문장 결론">
+        <h3>한 문장 결론</h3>
+        <p class="quote">하네스는 범용 지능을 기업 업무 수행자로 바꾸는 운영 장치입니다.</p>
+        <p class="source">이 문서는 원문을 그대로 번역한 것이 아니라, 기업 도입 관점에서 재구성한 한국어 분석본입니다.</p>
+      </aside>
+    </section>
+
+    <section id="diagram" aria-labelledby="diagram-title">
+      <h2 id="diagram-title">하네스 계층 구조도</h2>
+      <p class="section-note">아래 구조도는 원문의 일곱 구성요소를 한국어 업무 운영 관점으로 다시 그린 것입니다.</p>
+      <div class="diagram" role="img" aria-label="대규모 언어 모델을 중심으로 일곱 하네스 계층이 둘러싼 한국어 구조도">
+        <svg viewBox="0 0 980 620" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <linearGradient id="g1" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/></linearGradient>
+            <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="16" stdDeviation="16" flood-color="#000" flood-opacity=".28"/></filter>
+          </defs>
+          <rect width="980" height="620" rx="34" fill="#111827"/>
+          <circle cx="490" cy="310" r="104" fill="url(#g1)" filter="url(#shadow)"/>
+          <text x="490" y="292" text-anchor="middle" font-size="30" font-weight="900" fill="#08111f">대규모</text>
+          <text x="490" y="332" text-anchor="middle" font-size="30" font-weight="900" fill="#08111f">언어 모델</text>
+          <g font-family="Noto Sans KR, Apple SD Gothic Neo, sans-serif" font-size="20" font-weight="800" fill="#fff">
+            <g><rect x="70" y="70" width="245" height="82" rx="22" fill="#1f2937" stroke="#334155"/><text x="192" y="105" text-anchor="middle">컨텍스트와 메모리</text><text x="192" y="132" text-anchor="middle" font-size="15" fill="#cbd5e1">업무 지식과 장기 기억</text></g>
+            <g><rect x="370" y="42" width="240" height="82" rx="22" fill="#1f2937" stroke="#334155"/><text x="490" y="77" text-anchor="middle">도구와 실행</text><text x="490" y="104" text-anchor="middle" font-size="15" fill="#cbd5e1">외부 시스템 호출</text></g>
+            <g><rect x="665" y="70" width="245" height="82" rx="22" fill="#1f2937" stroke="#334155"/><text x="787" y="105" text-anchor="middle">계획과 반복</text><text x="787" y="132" text-anchor="middle" font-size="15" fill="#cbd5e1">작업 분해와 종료 조건</text></g>
+            <g><rect x="70" y="270" width="245" height="82" rx="22" fill="#1f2937" stroke="#334155"/><text x="192" y="305" text-anchor="middle">상태와 지속성</text><text x="192" y="332" text-anchor="middle" font-size="15" fill="#cbd5e1">체크포인트와 산출물</text></g>
+            <g><rect x="665" y="270" width="245" height="82" rx="22" fill="#1f2937" stroke="#334155"/><text x="787" y="305" text-anchor="middle">격리 실행환경</text><text x="787" y="332" text-anchor="middle" font-size="15" fill="#cbd5e1">권한과 보안 경계</text></g>
+            <g><rect x="160" y="468" width="285" height="86" rx="22" fill="#1f2937" stroke="#334155"/><text x="302" y="504" text-anchor="middle">관측성과 거버넌스</text><text x="302" y="532" text-anchor="middle" font-size="15" fill="#cbd5e1">추적, 평가, 승인</text></g>
+            <g><rect x="535" y="468" width="285" height="86" rx="22" fill="#1f2937" stroke="#334155"/><text x="677" y="504" text-anchor="middle">비용과 흐름 최적화</text><text x="677" y="532" text-anchor="middle" font-size="15" fill="#cbd5e1">모델 배치와 자동화 범위</text></g>
+          </g>
+          <g stroke="#64748b" stroke-width="3" opacity=".75">
+            <line x1="315" y1="120" x2="405" y2="250"/><line x1="490" y1="124" x2="490" y2="206"/><line x1="665" y1="120" x2="575" y2="250"/>
+            <line x1="315" y1="310" x2="386" y2="310"/><line x1="594" y1="310" x2="665" y2="310"/>
+            <line x1="380" y1="468" x2="435" y2="396"/><line x1="600" y1="468" x2="545" y2="396"/>
+          </g>
+        </svg>
+      </div>
+    </section>
+
+    <section id="layers" aria-labelledby="layers-title">
+      <h2 id="layers-title">일곱 하네스 계층</h2>
+      <p class="section-note">각 계층은 독립 기능이 아니라 함께 묶여야 하는 운영 체계입니다. 하나라도 약하면 에이전트는 데모 수준을 벗어나기 어렵습니다.</p>
+      <div class="grid cols-3 numbered">
+        <div class="card"><h3>컨텍스트와 메모리</h3><p>업무 문서, 고객 맥락, 과거 수행 기록, 장기 기억을 모델이 꺼내 쓸 수 있게 정리하는 계층입니다.</p></div>
+        <div class="card"><h3>도구와 실행</h3><p>사내 시스템, 문서 저장소, 업무 도구를 안전하게 호출하고 결과를 검증하는 연결 계층입니다.</p></div>
+        <div class="card"><h3>계획과 반복</h3><p>목표를 작은 작업으로 나누고, 실행 결과를 관찰하며, 재시도와 중단 조건을 관리하는 제어 계층입니다.</p></div>
+        <div class="card"><h3>상태와 지속성</h3><p>긴 작업을 중간에 저장하고, 장애 후 다시 이어서 수행할 수 있도록 세션과 산출물을 보존합니다.</p></div>
+        <div class="card"><h3>격리 실행환경</h3><p>파일, 네트워크, 권한, 자격 증명을 분리해 모델 실행이 보안 경계를 넘지 않도록 만듭니다.</p></div>
+        <div class="card"><h3>관측성과 거버넌스</h3><p>도구 호출, 판단 근거, 실패 지점, 승인 내역, 품질 평가를 기록해 운영 가능한 시스템으로 만듭니다.</p></div>
+        <div class="card"><h3>비용과 흐름 최적화</h3><p>쉬운 단계와 어려운 단계를 나누고, 자동화 범위와 사람 개입 지점을 조정해 품질과 비용을 함께 관리합니다.</p></div>
+      </div>
+    </section>
+
+    <section aria-labelledby="shift-title">
+      <h2 id="shift-title">경쟁력은 어디로 이동하는가</h2>
+      <div class="comparison">
+        <div class="card before">
+          <h3>기존 소프트웨어의 강점</h3>
+          <ul>
+            <li>정해진 화면과 업무 흐름</li>
+            <li>기능 수와 설정 옵션</li>
+            <li>데이터 입력과 승인 절차</li>
+            <li>고객별 화면 맞춤 설정</li>
+          </ul>
+        </div>
+        <div class="card after">
+          <h3>인공지능 이후의 강점</h3>
+          <ul>
+            <li>업무별 컨텍스트와 기억 구조</li>
+            <li>안전한 도구 호출과 권한 경계</li>
+            <li>실행 추적과 회귀 평가</li>
+            <li>비용을 고려한 작업 흐름 설계</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="insights" aria-labelledby="insights-title">
+      <h2 id="insights-title">기업 관점 시사점</h2>
+      <div class="grid cols-2">
+        <article class="card insight"><h3>하네스는 보조 기능이 아니라 운영 기반입니다</h3><p>프롬프트 작성이나 단일 챗봇 도입만으로는 기업 업무 전환이 어렵습니다. 실제 차별화는 지식, 도구, 실행환경, 관측성, 비용 통제가 결합된 운영 기반에서 발생합니다.</p></article>
+        <article class="card insight"><h3>실증 성공 기준을 다시 잡아야 합니다</h3><p>한 번 성공한 시연보다 실패 복구, 승인 절차, 로그 추적, 품질 평가, 비용 설명 가능성이 더 중요합니다. 이 기준이 없으면 운영 전환 단계에서 병목이 생깁니다.</p></article>
+        <article class="card insight"><h3>도구 연결은 거버넌스 문제입니다</h3><p>외부 도구를 많이 붙이는 것보다 누가, 언제, 어떤 권한으로, 어떤 근거에 따라 호출했는지를 남기는 설계가 중요합니다.</p></article>
+        <article class="card insight"><h3>비용 최적화는 설계 단계에서 결정됩니다</h3><p>모든 단계를 가장 비싼 모델에 맡기면 확장성이 떨어집니다. 단순 작업, 고위험 판단, 사람 승인 단계를 나눠 비용과 품질을 함께 설계해야 합니다.</p></article>
+      </div>
+    </section>
+
+    <section id="actions" class="grid cols-2" aria-labelledby="actions-title">
+      <article class="card">
+        <h2 id="actions-title">실행 과제</h2>
+        <div class="check"><div class="mark">1</div><p>우선 자동화할 업무를 고르고, 필요한 문서·데이터·승인 기준을 목록화합니다.</p></div>
+        <div class="check"><div class="mark">2</div><p>도구 호출 목록과 권한 경계를 정의하고, 고위험 작업에는 사람 승인 지점을 둡니다.</p></div>
+        <div class="check"><div class="mark">3</div><p>실행 로그, 실패 사례, 품질 평가 기준을 남겨 운영 개선 루프를 만듭니다.</p></div>
+        <div class="check"><div class="mark">4</div><p>비용이 큰 단계와 자동화 효과가 큰 단계를 분리해 단계별 적용 전략을 세웁니다.</p></div>
+      </article>
+      <aside class="card flat" aria-label="제안서에 넣을 수 있는 메시지">
+        <h2>제안서용 메시지</h2>
+        <p class="quote">기업형 에이전트의 성패는 모델 선택이 아니라, 모델을 안전하고 추적 가능하며 비용 효율적인 업무 수행자로 만드는 하네스 설계에 달려 있습니다.</p>
+      </aside>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <p>출처: <a href="https://tomtunguz.com/harnessing-ai/" aria-label="원문 링크 열기">원문 링크</a>. 본 문서는 원문 내용을 한국어로 구조화하고 기업 도입 관점에서 분석한 보고서입니다. 원문 저작권은 원저자에게 있습니다.</p>
+    </div>
+  </footer>
+</body>
+</html>
